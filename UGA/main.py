@@ -41,7 +41,7 @@ def parse_args():
                         help="Name of dataset")
     parser.add_argument("--device", type=str, default="/gpu:0",
                         help="Name of device")
-    parser.add_argument("--max-updates", type=int, default=-1,
+    parser.add_argument("--max-updates", type=int, default=1000000,
                         help="Max number of updates")
     parser.add_argument("--eta", type=float, default=0.1,
                         help="Learning rate")
@@ -49,7 +49,7 @@ def parse_args():
                         help="Batch size")
     parser.add_argument("--pack-size", type=int, default=16,
                         help="Packing size")
-    parser.add_argument("--valid-freq", type=int, default=100,
+    parser.add_argument("--valid-freq", type=int, default=10000,
                         help="Frequency of evaluation on valid set")
     parser.add_argument("--print-freq", type=int, default=1,
                         help="Frequency of printing metrics")
@@ -74,27 +74,6 @@ def parse_args():
 
     args = parser.parse_args()
     assert args.batch_size % args.pack_size == 0
-    if args.valid_freq == -1:
-        if args.data in ("movielens_1m", "book_crossing"):
-            args.valid_freq = 1000
-        else:
-            args.valid_freq = 500
-    if args.max_updates == -1:
-        if args.data in ("ad_click"):
-            args.max_updates = 500000
-            args.valid_freq = 10000
-        elif args.data in ("movielens_1m"):
-            args.max_updates = 100000
-            args.valid_freq = 5000
-        elif args.data in ("kuairec"):
-            args.max_updates = 500000
-            args.batch_size = 512 # We need to reduce the batch size to avoid OOM
-            args.valid_freq = 5000
-    iteration_mode = False
-    if iteration_mode :
-        args.max_updates = 500000
-        args.valid_freq = 1000
-        args.eta = 0.0001
     logging.info(f"Args: {args}")
     return args
 
