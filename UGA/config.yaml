@@ -1,0 +1,6 @@
+channel_type: grpc
+parties:
+    guest:
+        channel_address: "127.0.0.1:10098"
+    host:
+        channel_address: "127.0.0.1:10099"
