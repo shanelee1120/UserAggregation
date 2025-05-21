@@ -25,8 +25,8 @@ def preprocess_movielens_1m():
         command(f"unzip ./movielens_1m/ml-1m.zip -d ./movielens_1m/")
 
     # process movie data
-    movies = pd.read_csv("./movielens_1m/ml-1m/movies.dat", sep="\:\:", header=None)
-    # movies = pd.read_csv("./movielens_1m/ml-1m/movies.dat", sep="::", header=None, encoding='ISO-8859-1', engine='python')
+    # movies = pd.read_csv("./movielens_1m/ml-1m/movies.dat", sep="\:\:", header=None)
+    movies = pd.read_csv("./movielens_1m/ml-1m/movies.dat", sep="::", header=None, encoding='ISO-8859-1', engine='python')
     movies.columns = ["MovieID", "Title", "Genres"]
 
     movies["MovieID"] -= 1  # offset ID to start from zero
@@ -37,7 +37,7 @@ def preprocess_movielens_1m():
     movie_ids = movies.index.to_numpy()
 
     # process user data
-    users = pd.read_csv("./movielens_1m/ml-1m/users.dat", sep="\:\:", header=None)
+    users = pd.read_csv("./movielens_1m/ml-1m/users.dat", sep="::", header=None, encoding='ISO-8859-1', engine='python')
     users.columns = ["UserID", "Gender", "Age", "Occupation", "Zip-code"]
     users["UserID"] -= 1  # offset ID to start from zero
     users.set_index("UserID", inplace=True)
@@ -45,7 +45,7 @@ def preprocess_movielens_1m():
     user_ids = users.index.to_numpy()
 
     # rating data
-    ratings = pd.read_csv("./movielens_1m/ml-1m/ratings.dat", sep="\:\:", header=None)
+    ratings = pd.read_csv("./movielens_1m/ml-1m/ratings.dat", sep="::", header=None, encoding='ISO-8859-1', engine='python')
     ratings.columns = ["UserID", "MovieID", "Rating", "Timestamp"]
     ratings["UserID"] -= 1
     ratings["MovieID"] -= 1
@@ -56,17 +56,12 @@ def preprocess_movielens_1m():
     train_pos_u2i, valid_pos_u2i, sequence = \
         split_and_groupby_user_with_timestamp(pos_df, "UserID", "Positive", "Timestamp", 2)
 
-    print(train_pos_u2i.head())
-
     train_neg_u2i = generate_negative_samples(train_pos_u2i, movie_ids)
     valid_neg_u2i = generate_negative_samples(valid_pos_u2i, movie_ids)
-
-    print(train_neg_u2i.head())
 
     # merge
     train_u2i = pd.merge(train_pos_u2i, train_neg_u2i, how="left", left_on=["UserID"], right_on=["UserID"]).reindex(
         users.index)
-    print(train_u2i.head())
     valid_u2i = pd.merge(valid_pos_u2i, valid_neg_u2i, how="left", left_on=["UserID"], right_on=["UserID"]).reindex(
         users.index)
     train_u2i = train_u2i.apply(lambda s: s.fillna({i: [] for i in train_u2i.index}))
@@ -98,7 +93,6 @@ def preprocess_ad_click():
 
     # process item data
     items = pd.read_csv("./ad_click/ad_feature.csv", sep=",", header=0)
-    print(items.head())
     items["adgroup_id"] -= 1  # offset ID to start from zero
     items.set_index("adgroup_id", inplace=True)
     item_ids = items.index.to_numpy()
@@ -109,10 +103,8 @@ def preprocess_ad_click():
     item_dense_feats = item_dense_feats.reindex(list(range(0, item_ids.max() + 1)), fill_value=0)  # padding
     item_dense_feats.sort_index(inplace=True)
 
-
     # process user data
     users = pd.read_csv("./ad_click/user_profile.csv", sep=",", header=0)
-    print(users.head())
     users["userid"] -= 1  # offset ID to start from zero
     users.set_index("userid", inplace=True)
     users = process_sparse_feats(users.astype(str), users.columns) + 1
@@ -158,8 +150,6 @@ def preprocess_ad_click():
     train_u2i.sort_index(inplace=True)
     valid_u2i.sort_index(inplace=True)
     sequence.sort_index(inplace=True)
-    print(train_u2i.head())
-    print(sequence.head())
 
     if not os.path.exists("./ad_click"):
         os.mkdir("./ad_click")
@@ -237,8 +227,6 @@ def preprocess_kuairec():
     # record the features names
     item_sparse_feats = process_sparse_feats(item_feats, sparse_feats_name)
     item_dense_feats = process_dense_feats(item_feats, dense_feats_name, True)
-    print(item_sparse_feats.head())
-    print(item_dense_feats.head())
 
     samples = pd.read_csv("./KuaiRec 2.0/data/big_matrix.csv", sep=",", header=0)
     samples = samples[['user_id', 'video_id', 'watch_ratio', 'timestamp', 'date']]
@@ -253,8 +241,6 @@ def preprocess_kuairec():
     samples['video_id_date_idx'] = samples['video_id_date'].map(video_id_date_to_idx)
     samples = samples.dropna(subset=['video_id_date_idx'])
 
-    print(samples.head())
-
     percentile = samples['timestamp'].quantile(0.9) # Using the RTX 4090 GPU to train the model, please set the percentile to 0.9 or lagrer
 
     train_df = samples[samples['timestamp'] <= percentile]
@@ -264,7 +250,7 @@ def preprocess_kuairec():
     valid_df = valid_df.drop(columns=['date'])
     pos_df = split_pos_neg(train_df, "is_liked", 1)[["user_id", "video_id_date_idx", "timestamp"]]
     sequence = generate_user_sequences(pos_df, "user_id", "video_id_date_idx", "timestamp").set_index("user_id")[["timestamps", "sequence"]]
-    print(sequence.head())
+
     # group by users
     train_u2i = groupby_user(train_df, "user_id", "video_id_date_idx", 'timestamp', "is_liked")
     valid_u2i = groupby_user(valid_df, "user_id", "video_id_date_idx", 'timestamp', "is_liked")
@@ -276,8 +262,6 @@ def preprocess_kuairec():
     train_u2i.sort_index(inplace=True)
     valid_u2i.sort_index(inplace=True)
     sequence.sort_index(inplace=True)
-    print(train_u2i.head())
-    print(sequence.head())
 
     # saving
     np.save(f"./KuaiRec 2.0/train_user_ids.npy", train_user_ids.astype(np.int32))
@@ -450,7 +434,8 @@ def split_and_groupby_user_with_timestamp(df, user_column, item_column, timestam
     df = sort_by_user_and_timestamp(df, user_column, timestamp_column)
 
     # Generate sequences
-    sequence_df = generate_user_sequences(df, user_column, item_column, timestamp_column).set_index(user_column, inplace=True)
+    sequence_df = generate_user_sequences(df, user_column, item_column, timestamp_column)
+    sequence_df.set_index(user_column, inplace=True)
 
     # Split into train and valid sets
     train_df, valid_df = split_train_valid(df, user_column, num_valid_items)
@@ -498,8 +483,8 @@ if __name__ == "__main__":
     try:
         dataset = sys.argv[1]
     except:
-        logging.error("Missing dataset (movielens_1m, book_crossing, ali_ccp, ad_click, kuairec)")
-        logging.error("Missing dataset (movielens_1m, book_crossing, ali_ccp, ad_click, kuairec)")
+        logging.error("Missing dataset (movielens_1m, ad_click, kuairec)")
+        logging.error("Missing dataset (movielens_1m, ad_click, kuairec)")
         sys.exit(1)
 
     logging.info(f"Preprocssing {dataset}")

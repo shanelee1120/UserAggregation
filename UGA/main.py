@@ -54,8 +54,7 @@ def parse_args():
     parser.add_argument("--print-freq", type=int, default=1,
                         help="Frequency of printing metrics")
     parser.add_argument("--perturb", type=str, default="iso-proj", 
-                        choices=("proj", "iso-proj", "marvell", "gaussian", "maxnorm_gaussian", 
-                                 "laplace_dp", "bernouli_dp", "mixpro", "none"), 
+                        choices=("proj", "iso-proj", "marvell", "laplace_dp", "bernouli_dp", "none"), 
                         help="Perturbation method")
     parser.add_argument("--sum-kl-bound", type=float, default=4.0,
                         help="Upper bound of sum KL divergence (for proj and iso-proj")
